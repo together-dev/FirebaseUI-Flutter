@@ -4,11 +4,10 @@
 
 import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuth;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
+import 'package:firebase_ui_auth/src/widgets/name_input.dart';
 import 'package:firebase_ui_localizations/firebase_ui_localizations.dart';
 import 'package:firebase_ui_shared/firebase_ui_shared.dart';
 import 'package:flutter/material.dart';
-
-import '../validators.dart';
 
 /// {@template ui.auth.widgets.email_form.forgot_password_action}
 /// An action that indicates that password recovery was triggered from the UI.
@@ -202,14 +201,14 @@ class _SignInFormContent extends StatefulWidget {
 }
 
 class _SignInFormContentState extends State<_SignInFormContent> {
+  final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final passwordCtrl = TextEditingController();
-  final confirmPasswordCtrl = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
+  final nameFocusNode = FocusNode();
   final emailFocusNode = FocusNode();
   final passwordFocusNode = FocusNode();
-  final confirmPasswordFocusNode = FocusNode();
 
   String _chooseButtonLabel() {
     final ctrl = AuthController.ofType<EmailAuthController>(context);
@@ -238,6 +237,7 @@ class _SignInFormContentState extends State<_SignInFormContent> {
         widget.onSubmit!(email, passwordCtrl.text);
       } else {
         ctrl.setEmailAndPassword(
+          nameCtrl.text,
           email,
           password ?? passwordCtrl.text,
         );
@@ -251,6 +251,17 @@ class _SignInFormContentState extends State<_SignInFormContent> {
     const spacer = SizedBox(height: 16);
 
     final children = [
+      if (widget.action == AuthAction.signUp) ...[
+        NameInput(
+          focusNode: nameFocusNode,
+          controller: nameCtrl,
+          onSubmitted: (v) {
+            formKey.currentState?.validate();
+            FocusScope.of(context).requestFocus(emailFocusNode);
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
       if (widget.email == null) ...[
         EmailInput(
           focusNode: emailFocusNode,
@@ -275,8 +286,7 @@ class _SignInFormContentState extends State<_SignInFormContent> {
           alignment: Alignment.centerRight,
           child: ForgotPasswordButton(
             onPressed: () {
-              final navAction =
-                  FirebaseUIAction.ofType<ForgotPasswordAction>(context);
+              final navAction = FirebaseUIAction.ofType<ForgotPasswordAction>(context);
 
               if (navAction != null) {
                 navAction.callback(context, emailCtrl.text);
@@ -291,26 +301,26 @@ class _SignInFormContentState extends State<_SignInFormContent> {
           ),
         ),
       ],
-      if (widget.action == AuthAction.signUp ||
-          widget.action == AuthAction.link) ...[
-        const SizedBox(height: 8),
-        PasswordInput(
-          autofillHints: const [AutofillHints.newPassword],
-          focusNode: confirmPasswordFocusNode,
-          controller: confirmPasswordCtrl,
-          onSubmit: _submit,
-          validator: Validator.validateAll([
-            NotEmpty(l.confirmPasswordIsRequiredErrorText),
-            ConfirmPasswordValidator(
-              passwordCtrl,
-              l.confirmPasswordDoesNotMatchErrorText,
-            )
-          ]),
-          placeholder: l.confirmPasswordInputLabel,
-          showVisibilityToggle: widget.showPasswordVisibilityToggle,
-        ),
-        const SizedBox(height: 8),
-      ],
+      // if (widget.action == AuthAction.signUp ||
+      //     widget.action == AuthAction.link) ...[
+      //   const SizedBox(height: 8),
+      //   PasswordInput(
+      //     autofillHints: const [AutofillHints.newPassword],
+      //     focusNode: confirmPasswordFocusNode,
+      //     controller: confirmPasswordCtrl,
+      //     onSubmit: _submit,
+      //     validator: Validator.validateAll([
+      //       NotEmpty(l.confirmPasswordIsRequiredErrorText),
+      //       ConfirmPasswordValidator(
+      //         passwordCtrl,
+      //         l.confirmPasswordDoesNotMatchErrorText,
+      //       )
+      //     ]),
+      //     placeholder: l.confirmPasswordInputLabel,
+      //     showVisibilityToggle: widget.showPasswordVisibilityToggle,
+      //   ),
+      //   const SizedBox(height: 8),
+      // ],
       const SizedBox(height: 8),
       Builder(
         builder: (context) {

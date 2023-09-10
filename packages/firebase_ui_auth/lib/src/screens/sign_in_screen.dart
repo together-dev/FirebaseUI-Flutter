@@ -135,15 +135,12 @@ class SignInScreen extends MultiProviderScreen {
 
   @override
   Widget build(BuildContext context) {
-    final handlesDifferentSignInMethod = this
-        .actions
-        .whereType<AuthStateChangeAction<DifferentSignInMethodsFound>>()
-        .isNotEmpty;
+    final handlesDifferentSignInMethod =
+        this.actions.whereType<AuthStateChangeAction<DifferentSignInMethodsFound>>().isNotEmpty;
 
     final actions = [
       ...this.actions,
-      if (!handlesDifferentSignInMethod)
-        AuthStateChangeAction(_signInWithDifferentProvider)
+      if (!handlesDifferentSignInMethod) AuthStateChangeAction(_signInWithDifferentProvider)
     ];
 
     return FirebaseUIActions(
@@ -166,6 +163,52 @@ class SignInScreen extends MultiProviderScreen {
         footerBuilder: footerBuilder,
         breakpoint: breakpoint,
       ),
+    );
+  }
+}
+
+class FirebaseAuthScreen extends MultiProviderScreen {
+  final List<FirebaseUIAction> actions;
+  final Widget child;
+
+  const FirebaseAuthScreen({
+    super.key,
+    super.providers,
+    super.auth,
+    this.actions = const [],
+    required this.child,
+  });
+
+  Future<void> _signInWithDifferentProvider(
+    BuildContext context,
+    DifferentSignInMethodsFound state,
+  ) async {
+    await showDifferentMethodSignInDialog(
+      availableProviders: state.methods,
+      providers: providers,
+      context: context,
+      auth: auth,
+      onSignedIn: () {
+        Navigator.of(context).pop();
+      },
+    );
+
+    await auth.currentUser!.linkWithCredential(state.credential!);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final handlesDifferentSignInMethod =
+        this.actions.whereType<AuthStateChangeAction<DifferentSignInMethodsFound>>().isNotEmpty;
+
+    final actions = [
+      ...this.actions,
+      if (!handlesDifferentSignInMethod) AuthStateChangeAction(_signInWithDifferentProvider)
+    ];
+
+    return FirebaseUIActions(
+      actions: actions,
+      child: child,
     );
   }
 }

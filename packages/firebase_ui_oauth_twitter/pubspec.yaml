@@ -11,7 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
   firebase_auth: ^4.9.0
-  firebase_ui_oauth: ^1.4.11
+  firebase_ui_oauth:
+    git:
+      url: https://github.com/together-dev/FirebaseUI-Flutter
+      ref: main
+      path: packages/firebase_ui_oauth
   twitter_login: ^4.3.2
 
 dev_dependencies:

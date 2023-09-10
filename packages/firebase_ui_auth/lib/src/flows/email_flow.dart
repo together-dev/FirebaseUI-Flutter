@@ -18,7 +18,7 @@ class SigningUp extends AuthState {}
 abstract class EmailAuthController extends AuthController {
   /// Initializes the flow with an email and password. This method should be
   /// called after user submits a form with email and password.
-  void setEmailAndPassword(String email, String password);
+  void setEmailAndPassword(String name, String email, String password);
 }
 
 /// {@template ui.auth.flows.email_flow}
@@ -65,7 +65,7 @@ class EmailAuthFlow extends AuthFlow<EmailAuthProvider>
   }
 
   @override
-  void setEmailAndPassword(String email, String password) {
-    provider.authenticate(email, password, action);
+  void setEmailAndPassword(String name, String email, String password) {
+    provider.authenticate(name, email, password, action);
   }
 }

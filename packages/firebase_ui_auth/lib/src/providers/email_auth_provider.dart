@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:firebase_auth/firebase_auth.dart' as fba;
-import 'package:flutter/material.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
+import 'package:flutter/material.dart';
 
 /// A listener of the [EmailAuthFlow] flow lifecycle.
 abstract class EmailAuthListener extends AuthListener {}
@@ -12,8 +12,7 @@ abstract class EmailAuthListener extends AuthListener {}
 /// {@template ui.auth.providers.email_auth_provider}
 /// An [AuthProvider] that allows to authenticate using email and password.
 /// {@endtemplate}
-class EmailAuthProvider
-    extends AuthProvider<EmailAuthListener, fba.EmailAuthCredential> {
+class EmailAuthProvider extends AuthProvider<EmailAuthListener, fba.EmailAuthCredential> {
   @override
   late EmailAuthListener authListener;
 
@@ -24,20 +23,24 @@ class EmailAuthProvider
   bool supportsPlatform(TargetPlatform platform) => true;
 
   /// Tries to create a new user account with the given [EmailAuthCredential].
-  void signUpWithCredential(fba.EmailAuthCredential credential) {
-    authListener.onBeforeSignIn();
-    auth
-        .createUserWithEmailAndPassword(
-          email: credential.email,
-          password: credential.password!,
-        )
-        .then(authListener.onSignedIn)
-        .catchError(authListener.onError);
+  void signUpWithCredential(fba.EmailAuthCredential credential, String? name) async {
+    try {
+      authListener.onBeforeSignIn();
+      final credentials = await auth.createUserWithEmailAndPassword(
+        email: credential.email,
+        password: credential.password!,
+      );
+      await auth.currentUser?.updateDisplayName(name);
+      authListener.onSignedIn(credentials);
+    } catch (error) {
+      authListener.onError(error);
+    }
   }
 
   /// Creates an [EmailAuthCredential] with the given [email] and [password] and
   /// performs a corresponding [AuthAction].
   void authenticate(
+    String name,
     String email,
     String password, [
     AuthAction action = AuthAction.signIn,
@@ -47,14 +50,15 @@ class EmailAuthProvider
       password: password,
     ) as fba.EmailAuthCredential;
 
-    onCredentialReceived(credential, action);
+    onCredentialReceived(credential, action, name);
   }
 
   @override
   void onCredentialReceived(
     fba.EmailAuthCredential credential,
-    AuthAction action,
-  ) {
+    AuthAction action, [
+    String? name,
+  ]) {
     switch (action) {
       case AuthAction.signIn:
         signInWithCredential(credential);
@@ -64,13 +68,13 @@ class EmailAuthProvider
           return linkWithCredential(credential);
         }
 
-        signUpWithCredential(credential);
+        signUpWithCredential(credential, name);
         break;
       case AuthAction.link:
         linkWithCredential(credential);
         break;
       case AuthAction.none:
-        super.onCredentialReceived(credential, action);
+        super.onCredentialReceived(credential, action, name);
         break;
     }
   }

@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
+import 'package:flutter/material.dart';
 
 /// Default error handler that fetches available providers if
 /// `account-exists-with-different-credential` was thrown.
@@ -116,23 +116,21 @@ abstract class AuthProvider<T extends AuthListener, K extends AuthCredential> {
   /// Signs the user in with the provided [AuthCredential].
   void signInWithCredential(K credential) {
     authListener.onBeforeSignIn();
-    auth
-        .signInWithCredential(credential)
-        .then(authListener.onSignedIn)
-        .catchError(authListener.onError);
+    auth.signInWithCredential(credential).then(authListener.onSignedIn).catchError(authListener.onError);
   }
 
   /// Links a provided [AuthCredential] with the currently signed in user
   /// account.
-  void linkWithCredential(K credential) {
+  void linkWithCredential(K credential, [String? displayName]) async {
     authListener.onCredentialReceived(credential);
 
     try {
       final user = auth.currentUser!;
-      user
-          .linkWithCredential(credential)
-          .then((_) => authListener.onCredentialLinked(credential))
-          .catchError(authListener.onError);
+      await user.linkWithCredential(credential);
+      if (displayName != null) {
+        await user.updateDisplayName(displayName);
+      }
+      authListener.onCredentialLinked(credential);
     } catch (err) {
       authListener.onError(err);
     }
@@ -171,17 +169,17 @@ abstract class AuthProvider<T extends AuthListener, K extends AuthCredential> {
   /// [FirebaseAuth.createUserWithEmailAndPassword] and respectful lifecycle
   /// hooks are called if action is [AuthAction.signUp].
   /// {@endtemplate}
-  void onCredentialReceived(K credential, AuthAction action) {
+  void onCredentialReceived(K credential, AuthAction action, [String? name]) {
     switch (action) {
       case AuthAction.link:
-        linkWithCredential(credential);
+        linkWithCredential(credential, name);
         break;
       case AuthAction.signIn:
       // Only email provider has a different action for sign in and sign up
       // and implements it's own sign up logic.
       case AuthAction.signUp:
         if (shouldUpgradeAnonymous) {
-          linkWithCredential(credential);
+          linkWithCredential(credential, name);
           break;
         }
 
